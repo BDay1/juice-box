@@ -1,32 +1,24 @@
 // grab our client with destructuring from the export in index.js
 const { 
     client,
+    createUser,
+    updateUser,
     getAllUsers,
-    createUser
+    getUserById,
+    createPost,
+    updatePost,
+    getAllPosts,
+    getPostsByUser,
  } = require('./index');
 
 //now we are going to create some users
-async function createInitialUsers() {
-    try{
-        console.log("Creating the Users");
-        const albert = await createUser({ username: 'albert', password: 'bertie99'});
-        const sandra = await createUser({ username: 'sandra', password: '2sandy4me'});
-        const glamgal = await createUser({ username: 'glamgal', password: 'soglam'});
-        
-        console.log("Users are Created!")
-    
-    } catch(error) {
-        console.error("Just kidding nothing happened...");
-        throw error;
-    }
-}
-
 //this is bringing all of the table data from our database to where we can use it
 //its searching for the table and if it exists we are pulling all of its data
-async function dropTables() {
+const dropTables = async () => {
     try {
         console.log("Starting to drop tables!")
         await client.query(`
+        DROP TABLE IF EXISTS posts;
         DROP TABLE IF EXISTS users;
         `);
       console.log("Thy table has been dropped!")
@@ -35,45 +27,141 @@ async function dropTables() {
         throw error;
     }
 }
+
 // this is going to move that data to a format to read in the code
-async function createTables() {
+const createTables = async () => {
     try {
         console.log("Found my hammer, table on the way!")
         await client.query(`
-      CREATE TABLE users (
-        id SERIAL PRIMARY KEY,
-        username varchar(255) UNIQUE NOT NULL,
-        password varchar(255) NOT NULL
-      );
-    `);
+        CREATE TABLE users (
+            id SERIAL PRIMARY KEY,
+            username varchar(255) UNIQUE NOT NULL,
+            password varchar(255) NOT NULL,
+            name varchar(255) NOT NULL,
+            location varchar(255) NOT NULL,
+            active boolean DEFAULT true
+          );
+          CREATE TABLE posts (
+            id SERIAL PRIMARY KEY,
+            "authorId" INTEGER REFERENCES users(id),
+            title varchar(255) NOT NULL,
+            content TEXT NOT NULL,
+            active BOOLEAN DEFAULT true
+          );
+        `);
         console.log("Tables done. Double tapped for good measure.")
     } catch (error) {
         console.error("Made an error making tables!")
         throw error;
     }
 }
+
+async function createInitialUsers() {
+    try{ 
+        console.log("Creating the Users");
+        await createUser({ 
+            username: 'albert', 
+            password: 'bertie99',
+            name: 'Al Bert',
+            location: 'Sidney, Australia' 
+          });
+          await createUser({ 
+            username: 'sandra', 
+            password: '2sandy4me',
+            name: 'Just Sandra',
+            location: 'Ain\'t tellin\''
+          });
+          await createUser({ 
+            username: 'glamgal',
+            password: 'soglam',
+            name: 'Joshua',
+            location: 'Upper East Side'
+          });
+        console.log("Users are Created!")
+    
+    } catch(error) {
+        console.error("Just kidding nothing happened...");
+        throw error;
+    }
+}
+
+//" we are getting the initial posts to put in our empty post array. we are invoking the get all users so we can get the array we are defining of our three users, then creating a post with the keys with values, authorId, title, and content.")
+const createInitialPosts = async () => {
+    try {
+        console.log("making first posts")
+        const [albert, sandra, glamgal] = await getAllUsers();
+
+        await createPost({
+            authorId: albert.id,
+            title: "First Post",
+            content: "This is my first post.........."
+        }); console.log("alberts done")
+
+        await createPost({
+            authorId: sandra.id,
+            title: "First Post!",
+            content: "Made blueberry Pies! "
+        });console.log("sandras done")
+
+        await createPost({
+            authorId: glamgal.id,
+            title: "Did this post?",
+            content: "I dont know technology, did it work? "
+        });  console.log("glamgals done")
+
+    } catch (error) {
+        throw error;
+      }
+}
 //this is going to create the tables we need from that data
-async function rebuildDB() {
+const rebuildDB = async () => {
     try {
         client.connect();
 
         await dropTables();
         await createTables();
         await createInitialUsers();
+        await createInitialPosts();
+        
+        
     } catch (error) {
        throw error;
     }
 }
-async function testDB() {
+const testDB = async () => {
     try {
       console.log("Testing, Testing 1,2...?")
   
       // queries are promises, so we can await them
       const users = await getAllUsers();
-      console.log("getAllUsers:", users);
-  
-      //We are logging to keep track of the processes for now
+      console.log("Result:", users);
+
+      console.log("Calling updateUser on users[0]")
+    const updateUserResult = await updateUser(users[0].id, {
+      name: "Newname Sogood",
+      location: "Lesterville, KY"
+    });
+    console.log("Result:", updateUserResult);
+
+
+    console.log("Calling getAllPosts");
+    const posts = await getAllPosts();
+    console.log("Result:", posts);
+
+    console.log("Calling updatePost on posts[0]");
+    const updatePostResult = await updatePost(posts[0].id, {
+      title: "New Title",
+      content: "Updated Content"
+    });
+    console.log("Result:", updatePostResult);
+
+    console.log("Calling getUserById with 1");
+    const albert = await getUserById(1);
+    console.log("Result:", albert);
+      
       console.log("Thats it...IM DONE!");
+      console.log("getting user posts")
+      await getUserById(1);
     } catch (error) {
       console.error("It broke....no work...test fail");
      throw error;
@@ -86,4 +174,5 @@ rebuildDB()
   .then(testDB)
   .catch(console.error)
   .finally(() => client.end());
+
 
