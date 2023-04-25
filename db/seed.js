@@ -197,13 +197,27 @@ const testDB = async () => {
     });
     console.log("Result:", updatePostResult);
 
+    console.log("Calling updatePost on posts[1], only updating tags");
+        const updatePostTagsResult = await updatePost(posts[1].id, {
+          tags: ["#youcandoanything", "#redfish", "#bluefish"]
+        });
+
+        console.log("Result:", updatePostTagsResult);
+      await getUserById(1);
+      
     console.log("Calling getUserById with 1");
     const albert = await getUserById(1);
     console.log("Result:", albert);
+
+
+    console.log("Calling getPostsByTagName with #happy");
+    const postsWithHappy = await getPostsByTagName("#happy");
+    console.log("Result:", postsWithHappy);
       
       console.log("Thats it...IM DONE!");
-      console.log("getting user posts")
-      await getUserById(1);
+      
+      
+    
     } catch (error) {
       console.error("It broke....no work...test fail");
      throw error;
