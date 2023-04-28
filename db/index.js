@@ -1,7 +1,13 @@
 const { Client } = require('pg');
-
 const client = new Client('postgres://localhost:5432/juicebox-dev');
 
+
+
+
+
+/*******CREATE USER ********/
+
+/*This is a function with 4 parameters. we are creating an object variable for data we are getting from the client. from the client we are requesting the parameters values and inserting them into an array which gets translated into our object of users*/
 
 const createUser = async ({ 
     username, 
@@ -21,15 +27,25 @@ const createUser = async ({
         throw error;
     }
   }
+
   //do the keys we are looking formatch what we are trying to input
 
-  const updateUser = async (id, fields = {}) => {
-    // build the set string
+
+/*******UPDATE USER ********/
+
+/*this function has 2 parameters one equalling an object. we we are building a string to pass to our sql request. this string is being created by mapping through the fields objext of key value pairs. We are looking for the keys that we are setting(which would be usually seen as $1,$2,$3 but we dont know how many the user is updating hence the mapping) if we have mapped and there is no keys to be updated we do nothing. If there is keys in fields then we are passing ${setString}, the keys, to the query. that is where we will then go into the rows update the keys with the object values from fields and return the new user data. 
+
+
+
+double dollar sign = setting the value to the setstring is the value of the key index +1, youre setting the keys for the $1, $2....*/
+
+
+const updateUser = async (id, fields = {}) => {
+  // build the set string
     const setString = Object.keys(fields).map(
       (key, index) => `"${ key }"=$${ index + 1 }`
     ).join(', ');
-  //double dollar sign = setting the value to the setstring is the value of the key index +1, youre setting a value to a thing seen as a value?
-    // return early if they dont match
+  
     if (setString.length === 0) {
       return;
     }
@@ -47,6 +63,10 @@ const createUser = async ({
       throw error;
     }
   }
+
+  /*******GET ALL USERS ********/
+
+  /* we have function getallusers we are creating a variable to hold our query results from the client. it is calling 5 key values from the users table and returning it in our data object users for our api*/
   const getAllUsers = async () => {
     const { rows } = await client.query(
         `SELECT id, username, name, location, active
@@ -54,6 +74,9 @@ const createUser = async ({
         `);
         return rows;
 }
+
+/*******GET USER BY ID********/
+/*we have a function  with one parameter userId. we are going to create a query that asks for all users whos id is equal to the id requested. then this will link to the post where the id matches. delte passwordis for security reasons so the password of the user is not sent with the returned information.*/
   const getUserById = async (userId) => {
     try{
        
@@ -73,6 +96,8 @@ const createUser = async ({
     }
 }
 
+/*******CREATE POST ********/
+/* our create post function is calling 3 parameters. we are making a request from the client to insert this 3 keys and their values into our object. then we are invoking the function to link the tags to the posts with the matching post ids */
   const createPost= async ({
     authorId,
     title,
@@ -93,6 +118,8 @@ const createUser = async ({
     throw error;
   }
 }
+
+/*******CREATE POST TAG********/
 async function createPostTag(postId, tagId) {
   try {
     await client.query(`
@@ -104,6 +131,8 @@ async function createPostTag(postId, tagId) {
     throw error;
   }
 }
+
+/*******ADD TAGS TO POST ********/
 async function addTagsToPost(postId, tagList) {
   try {
     console.log(tagList)
@@ -119,6 +148,7 @@ async function addTagsToPost(postId, tagList) {
   }
 }
 
+/*******UPDATE POST********/
   const updatePost = async ( postId, fields = {}) => {
    // read off the tags & remove that field 
    const { tags } = fields; // might be undefined
@@ -166,6 +196,7 @@ async function addTagsToPost(postId, tagList) {
    }
  }
 
+ /*******GET ALL POSTS********/
   const getAllPosts = async () => {
     const { rows } = await client.query(
         `SELECT *
@@ -173,6 +204,8 @@ async function addTagsToPost(postId, tagList) {
         `);
         return rows;
 }
+
+/*******GET ALL TAGS********/
 const getAllTags = async () => {
   const { rows } = await client.query(
     `SELECT *
@@ -180,6 +213,8 @@ const getAllTags = async () => {
   );
   return rows;
 }
+
+/*******GET POSTS BY USER********/
 const getPostsByUser = async (userId) => {
     try{
         const {rows} = await client.query(`
@@ -199,96 +234,114 @@ const getPostsByUser = async (userId) => {
       // get their posts (use getPostsByUser)
       // then add the posts to the user object with key 'posts'
       // return the user object
-      async function createTags(tagList) {
-        if (tagList.length === 0) { 
-          return; 
-        }
-      
-        // need something like: $1), ($2), ($3 
-        const insertValues = tagList.map(
-          (_, index) => `$${index + 1}`).join('), (');
-        // then we can use: (${ insertValues }) in our string template
-      
-        // need something like $1, $2, $3
-        const selectValues = tagList.map(
-          (_, index) => `$${index + 1}`).join(', ');
-        // then we can use (${ selectValues }) in our string template
-      
-        try {
-          const { rows: tags } = await client.query(`
-        INSERT INTO tags(name)
-        VALUES (${ insertValues})
-        ON CONFLICT ("name") DO NOTHING
-        RETURNING *;
-        `, tagList);
-       return tags
-        } catch (error) {
-          throw error;
-        }
+
+ /*******CREATE TAGS********/
+ async function createTags(tagList) {
+    if (tagList.length === 0) { 
+      return; 
+    }
+  
+    // need something like: $1), ($2), ($3 
+    const insertValues = tagList.map(
+      (_, index) => `$${index + 1}`).join('), (');
+    // then we can use: (${ insertValues }) in our string template
+  
+    // need something like $1, $2, $3
+    const selectValues = tagList.map(
+      (_, index) => `$${index + 1}`).join(', ');
+    // then we can use (${ selectValues }) in our string template
+  //   next({
+  //     name: 'NoMatchingPost',
+  //     message: 'Error, No Matches!'
+  // })
+    try {
+      const { rows: tags } = await client.query(`
+    INSERT INTO tags(name)
+    VALUES (${ insertValues})
+    ON CONFLICT ("name") DO NOTHING
+    RETURNING *;
+    `, tagList);
+   return tags
+    } catch (error) {
+      throw error;
+    }
+  }
+  
+ /*******GET POST BY ID ********/
+  async function getPostById(postId) {
+    try {
+      const { rows: [ post ]  } = await client.query(`
+        SELECT *
+        FROM posts
+        WHERE id=$1;
+      `, [postId]);
+
+      if (!post) {
+        throw {
+          name: "PostNotFoundError",
+          message: "Could not find a post with that postId"
+        };
       }
-      
-     
-      async function getPostById(postId) {
-        try {
-          const { rows: [ post ]  } = await client.query(`
-            SELECT *
-            FROM posts
-            WHERE id=$1;
-          `, [postId]);
-      
-          const { rows: tags } = await client.query(`
-            SELECT tags.*
-            FROM tags
-            JOIN post_tags ON tags.id=post_tags."tagId"
-            WHERE post_tags."postId"=$1;
-          `, [postId])
-      
-          const { rows: [author] } = await client.query(`
-            SELECT id, username, name, location
-            FROM users
-            WHERE id=$1;
-          `, [post.authorId])
-      
-          post.tags = tags;
-          post.author = author;
-      
-          delete post.authorId;
-      
-          return post;
-        } catch (error) {
-          throw error;
-        }
-      }
-      async function getPostsByTagName(tagName) {
-        try {
-          const { rows: postIds } = await client.query(`
-            SELECT posts.id
-            FROM posts
-            JOIN post_tags ON posts.id=post_tags."postId"
-            JOIN tags ON tags.id=post_tags."tagId"
-            WHERE tags.name=$1;
-          `, [tagName]);
-      
-          return await Promise.all(postIds.map(
-            post => getPostById(post.id)
-          ));
-        } catch (error) {
-          throw error;
-        }
-      } 
-      async function getUserByUsername(username) {
-        try {
-          const { rows: [user] } = await client.query(`
-            SELECT *
-            FROM users
-            WHERE username=$1;
-          `, [username]);
-      
-          return user;
-        } catch (error) {
-          throw error;
-        }
-      }
+  
+      const { rows: tags } = await client.query(`
+        SELECT tags.*
+        FROM tags
+        JOIN post_tags ON tags.id=post_tags."tagId"
+        WHERE post_tags."postId"=$1;
+      `, [postId])
+  
+      const { rows: [author] } = await client.query(`
+        SELECT id, username, name, location
+        FROM users
+        WHERE id=$1;
+      `, [post.authorId])
+  
+      post.tags = tags;
+      post.author = author;
+  
+      delete post.authorId;
+  
+      return post;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /*******GET POST BY TAG NAME ********/
+  async function getPostsByTagName(tagName) {
+    try {
+      const { rows: postIds } = await client.query(`
+        SELECT posts.id
+        FROM posts
+        JOIN post_tags ON posts.id=post_tags."postId"
+        JOIN tags ON tags.id=post_tags."tagId"
+        WHERE tags.name=$1;
+      `, [tagName]);
+  
+      const posts = await Promise.all(postIds.map(
+        post => getPostById(post.id)
+
+      ));
+      return posts;
+    } catch (error) {
+      throw error;
+    }
+  } 
+
+  /*******GET USER BY USERNAME ********/
+  async function getUserByUsername(username) {
+    try {
+      const { rows: [user] } = await client.query(`
+        SELECT *
+        FROM users
+        WHERE username=$1;
+      `, [username]);
+  
+      return user;
+    } catch (error) {
+      throw error;
+    }
+  }
 module.exports = {
   client,
   createUser,

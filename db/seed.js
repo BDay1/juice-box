@@ -10,12 +10,13 @@ const {
     getAllPosts,
     getPostsByUser,
     createTags,
-    addTagsToPost
+    addTagsToPost,
+    getPostsByTagName
  } = require('./index');
 
-//now we are going to create some users
-//this is bringing all of the table data from our database to where we can use it
-//its searching for the table and if it exists we are pulling all of its data
+
+
+/*******DROP TABLES ********/
 const dropTables = async () => {
     try {
         console.log("Starting to drop tables!")
@@ -32,7 +33,10 @@ const dropTables = async () => {
     }
 }
 
-// this is going to move that data to a format to read in the code
+
+/*******CREATE TABLES ********/
+// this is going to move that data to a format to read in the code and create our tables for our data
+
 const createTables = async () => {
     try {
         console.log("Found my hammer, table on the way!")
@@ -69,6 +73,9 @@ const createTables = async () => {
     }
 }
 
+/*******CREATE USERS ********/
+
+// we are creating our first users
 async function createInitialUsers() {
     try{ 
         console.log("Creating the Users");
@@ -98,7 +105,12 @@ async function createInitialUsers() {
     }
 }
 
-//" we are getting the initial posts to put in our empty post array. we are invoking the get all users so we can get the array we are defining of our three users, then creating a post with the keys with values, authorId, title, and content.")
+
+
+
+/*******CREATE POSTS ********/
+
+// we are getting the initial posts to put in our empty post array. we are invoking the get all users so we can get the array we are defining of our three users, then creating a post with the keys with values, authorId, title, and content.
 const createInitialPosts = async () => {
     try {
         console.log("making first posts")
@@ -132,11 +144,13 @@ const createInitialPosts = async () => {
         throw error;
       }
 }
+
+/*******CREATE TAGS********/
 async function createInitialTags() {
   try {
     console.log("Starting to create tags...");
 
-    const [happy, sad, inspo, catman] = await createTags([
+    const [happy, inspo, pies, confused] = await createTags([
       '#happy', 
       '#ilovepie', 
       '#noideawhatiamdoing',
@@ -145,9 +159,9 @@ async function createInitialTags() {
 
     const [postOne, postTwo, postThree] = await getAllPosts();
 
-    await addTagsToPost(postOne.id, [happy, inspo]);
-    await addTagsToPost(postTwo.id, [sad, inspo]);
-    await addTagsToPost(postThree.id, [happy, catman, inspo]);
+    await addTagsToPost(postOne.id, [happy, pies]);
+    await addTagsToPost(postTwo.id, [sad, pies]);
+    await addTagsToPost(postThree.id, [happy, confused, inspo]);
 
     console.log("Finished creating tags!");
   } catch (error) {
@@ -170,6 +184,8 @@ const rebuildDB = async () => {
        throw error;
     }
 }
+
+/******* TESTS ********/
 const testDB = async () => {
     try {
       console.log("Testing, Testing 1,2...?")
