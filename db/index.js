@@ -1,8 +1,16 @@
 const { Client } = require('pg');
-const client = new Client('postgres://localhost:5432/juicebox-dev');
+// const client = new Client('postgres://localhost:5432/juicebox-dev');
+const { DATABASE_URL } = process.env;
 
+const connectionString = DATABASE_URL || 'postgres://juicebox_nzy0_user:xsIPhukltDi4P4kSjhESBbWetU0DjhEi@dpg-ch5tq8l269v5rft840b0-a.ohio-postgres.render.com/juicebox_nzy0';
 
-
+const client = new Client({
+  connectionString,
+  ssl:
+    process.env.NODE_ENV === 'production'
+      ? { rejectUnauthorized: false }
+      : undefined,
+});
 
 
 /*******CREATE USER ********/
